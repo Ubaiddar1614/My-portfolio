@@ -10,11 +10,7 @@ export async function POST(request) {
   try {
     const { name, email, phone, message } = await request.json();
     
-    // 1. Save to MongoDB (Your permanent log)
-    await connectMongoDB();
-    await Message.create({ name, email, phone, message });
-
-    // 2. Trigger the Email Notification
+    // 1. Send Email Notification first
     await resend.emails.send({
       from: 'Portfolio <onboarding@resend.dev>',
       to: 'ubaiddar1614@gmail.com', // Your Gmail
@@ -33,6 +29,10 @@ export async function POST(request) {
         </div>
       `
     });
+
+    // 2. Save to MongoDB (only if email succeeded)
+    await connectMongoDB();
+    await Message.create({ name, email, phone, message });
     
     return NextResponse.json({ message: "Success!" }, { status: 201 });
   } catch (error) {
