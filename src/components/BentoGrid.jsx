@@ -118,7 +118,7 @@ export default function BentoGrid({ activeTab }) {
     { role: "Full Stack Intern",         company: "Division Public School", stack: ["ASP.NET","C#","HTML5"],       current: false },
   ];
 
-  const aboutWords    = "Hi, I'm Ubaid — a CS student, co-founder of Stack Fuse, and backend developer who builds real systems. I care about clean architecture, not just getting things to run.".split(" ");
+  const aboutWords    = "Hi, I'm Ubaid a CS student, co-founder of Stack Fuse, and backend developer who builds real systems. I care about clean architecture, not just getting things to run.".split(" ");
   const marqueeItems  = ["Java","Spring Boot","MySQL","REST APIs","Docker","System Design","Backend Dev","Stack Fuse"];
 
   return (
