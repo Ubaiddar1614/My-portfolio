@@ -1,17 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight, Github, Linkedin, Instagram,
   Database, Server, Code2, Briefcase, BookOpen
 } from "lucide-react";
 import ContactForm from "./ContactForm";
 
-/* ─────────────────────────────────────────────
-   Tooltip — rendered in a wrapper div that sits
-   ABOVE the tile (no overflow-hidden parent)
-───────────────────────────────────────────── */
 const SassyTooltip = ({ show }) => (
   <AnimatePresence>
     {show && (
@@ -23,14 +19,12 @@ const SassyTooltip = ({ show }) => (
         className="absolute -top-11 left-1/2 -translate-x-1/2 bg-[#8B5CF6] text-white text-[11px] font-bold py-2 px-4 rounded-xl shadow-2xl whitespace-nowrap z-[999] pointer-events-none"
       >
         👇 It's right here dumbass
-        {/* arrow pointing DOWN */}
         <span className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 block w-3 h-3 bg-[#8B5CF6] rotate-45 rounded-sm" />
       </motion.div>
     )}
   </AnimatePresence>
 );
 
-/* ─── wrapper that gives each tile a tooltip-safe overflow context ─── */
 const TooltipWrap = ({ show, children, className }) => (
   <div className={`relative ${className ?? ""}`}>
     <SassyTooltip show={show} />
@@ -38,34 +32,6 @@ const TooltipWrap = ({ show, children, className }) => (
   </div>
 );
 
-/* ─── 3-D Tilt Card ─── */
-const TiltCard = ({ children, className, onClick }) => {
-  const ref = useRef(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [5, -5]), { stiffness: 280, damping: 28 });
-  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-5, 5]), { stiffness: 280, damping: 28 });
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={(e) => {
-        if (!ref.current) return;
-        const r = ref.current.getBoundingClientRect();
-        x.set((e.clientX - r.left) / r.width - 0.5);
-        y.set((e.clientY - r.top) / r.height - 0.5);
-      }}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
-      onClick={onClick}
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-/* ─── Scrolling Marquee ─── */
 const Marquee = ({ items }) => (
   <div className="overflow-hidden whitespace-nowrap">
     <motion.div
@@ -82,22 +48,17 @@ const Marquee = ({ items }) => (
   </div>
 );
 
-/* ════════════════════════════════════════════ */
-export default function BentoGrid({ activeTab }) {
+export default function BentoGrid({ activeTab, isMobile }) {
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const [isDropped, setIsDropped]         = useState(false);
+  const [isDropped, setIsDropped] = useState(false);
 
-  /* contact tile mouse tracking */
-  const contactTileRef                        = useRef(null);
-  const [mousePos, setMousePos]               = useState({ x: 0, y: 0 });
-  const [isHoveringContact, setHoverContact]  = useState(false);
-
+  // animation variants
   const container = {
-    hidden:  {},
+    hidden: {},
     visible: { transition: { staggerChildren: 0.07, delayChildren: 0.04 } },
   };
   const tile = {
-    hidden:  { opacity: 0, y: 38, scale: 0.96, filter: "blur(8px)" },
+    hidden: { opacity: 0, y: 38, scale: 0.96, filter: "blur(8px)" },
     visible: {
       opacity: 1, y: 0, scale: 1, filter: "blur(0px)",
       transition: { type: "spring", stiffness: 240, damping: 22, mass: 0.9 },
@@ -105,21 +66,21 @@ export default function BentoGrid({ activeTab }) {
   };
 
   const techStack = [
-    { icon: <Code2    size={12} />, label: "Java"       },
-    { icon: <Server   size={12} />, label: "Spring Boot" },
-    { icon: <Database size={12} />, label: "MySQL"       },
-    { icon: <Code2    size={12} />, label: "REST APIs"   },
-    { icon: <Server   size={12} />, label: "Docker"      },
-    { icon: <Code2    size={12} />, label: "Node.js"     },
+    { icon: <Code2 size={12} />, label: "Java" },
+    { icon: <Server size={12} />, label: "Spring Boot" },
+    { icon: <Database size={12} />, label: "MySQL" },
+    { icon: <Code2 size={12} />, label: "REST APIs" },
+    { icon: <Server size={12} />, label: "Docker" },
+    { icon: <Code2 size={12} />, label: "Node.js" },
   ];
 
   const workExp = [
-    { role: "Co-Founder & Backend Dev", company: "Stack Fuse",           stack: ["Java","Spring Boot","MySQL"],  current: true  },
-    { role: "Full Stack Intern",         company: "Division Public School", stack: ["ASP.NET","C#","HTML5"],       current: false },
+    { role: "Co-Founder & Backend Dev", company: "Stack Fuse", stack: ["Java","Spring Boot","MySQL"], current: true },
+    { role: "Full Stack Intern", company: "Division Public School", stack: ["ASP.NET","C#","HTML5"], current: false },
   ];
 
-  const aboutWords    = "Hi, I'm Ubaid a CS student, co-founder of Stack Fuse, and backend developer who builds real systems. I care about clean architecture, not just getting things to run.".split(" ");
-  const marqueeItems  = ["Java","Spring Boot","MySQL","REST APIs","Docker","System Design","Backend Dev","Stack Fuse"];
+  const aboutWords = "Hi, I'm Ubaid a CS student, co-founder of Stack Fuse, and backend developer who builds real systems. I care about clean architecture, not just getting things to run.".split(" ");
+  const marqueeItems = ["Java","Spring Boot","MySQL","REST APIs","Docker","System Design","Backend Dev","Stack Fuse"];
 
   return (
     <>
@@ -129,9 +90,9 @@ export default function BentoGrid({ activeTab }) {
         animate="visible"
         className="grid grid-cols-12 gap-2.5 w-full max-w-[1100px] mx-auto"
       >
-        {/* ══ ROW 1 ══════════════════════════════════════════════════════ */}
+        {/* row 1 */}
 
-        {/* 1 · HERO ── no tooltip needed */}
+        {/* hero tile */}
         <motion.div variants={tile}
           className="col-span-12 md:col-span-5 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-7 relative overflow-hidden flex flex-col justify-between min-h-[260px]"
         >
@@ -192,7 +153,7 @@ export default function BentoGrid({ activeTab }) {
           </div>
         </motion.div>
 
-        {/* 2 · PORTRAIT ── no tooltip */}
+        {/* portrait tile */}
         <motion.div variants={tile}
           className="col-span-12 md:col-span-4 rounded-[28px] overflow-hidden relative min-h-[260px] bg-[#1A1A1C] group"
         >
@@ -214,9 +175,9 @@ export default function BentoGrid({ activeTab }) {
           </motion.div>
         </motion.div>
 
-        {/* 3 · PROJECTS — TooltipWrap so tooltip is NOT clipped */}
-        <TooltipWrap show={activeTab === "PROJECTS"} className="col-span-12 md:col-span-3">
-          <motion.div variants={tile}
+        {/* projects tile */}
+        <TooltipWrap show={!isMobile && activeTab === "PROJECTS"} className="col-span-12 md:col-span-3">
+          <motion.div id="projects" variants={tile}
             className="bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-full min-h-[260px]"
           >
             <p className="text-gray-500 text-[10px] tracking-widest uppercase mb-3">Projects</p>
@@ -243,11 +204,11 @@ export default function BentoGrid({ activeTab }) {
           </motion.div>
         </TooltipWrap>
 
-        {/* ══ ROW 2 ══════════════════════════════════════════════════════ */}
+        {/* row 2 */}
 
-        {/* 4 · ABOUT — TooltipWrap */}
-        <TooltipWrap show={activeTab === "ABOUT"} className="col-span-12 md:col-span-5">
-          <motion.div variants={tile}
+        {/* about tile */}
+        <TooltipWrap show={!isMobile && activeTab === "ABOUT"} className="col-span-12 md:col-span-5">
+          <motion.div id="about" variants={tile}
             className="relative rounded-[28px] overflow-hidden flex flex-col justify-between min-h-[200px]"
           >
             <div className="absolute inset-0 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] overflow-hidden z-0">
@@ -270,24 +231,23 @@ export default function BentoGrid({ activeTab }) {
             </div>
 
             <div className="relative z-10 p-6 md:p-7 flex flex-col justify-between h-full gap-4">
-              <p className="text-gray-700 text-[10px] tracking-[0.2em] uppercase font-mono">
-                FRAMER ✦ TAILWIND ✦ SPRING BOOT ✦ MYSQL
-              </p>
               {!isDropped && (
                 <p className="text-gray-400 leading-relaxed text-sm md:text-[15px]">
                   <span
                     onClick={() => setIsDropped(true)}
                     className="cursor-pointer text-emerald-400 font-semibold hover:text-emerald-300 transition-colors"
-                  >Hi, I'm Ubaid</span>{" "}
-                  — a CS student, co-founder of{" "}
-                  <span className="text-white font-medium">Stack Fuse</span>, and backend developer who builds real systems. I care about clean architecture, not just getting things to run.
+                  >Hey, I'm Ubaid.</span>{" "}
+                  Currently grinding through my CS degree while running Stack Fuse. I mostly work on the backend making sure APIs don't break and databases don't cry. I like clean code more than I like writing it, if that makes sense.
                 </p>
               )}
               <div className="flex flex-wrap gap-1.5 mt-auto">
                 {techStack.map((t, i) => (
-                  <motion.span key={i}
-                    whileHover={{ scale: 1.12, backgroundColor: "rgba(52,211,153,0.18)" }}
-                    className="flex items-center gap-1 text-[10px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1 cursor-default"
+                  <motion.span
+                    key={i}
+                    whileHover={{ scale: 1.08, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="flex items-center gap-1 text-[10px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1 cursor-pointer hover:bg-emerald-500/20 hover:border-emerald-500/40 active:bg-emerald-500/30 select-none"
                   >
                     {t.icon} {t.label}
                   </motion.span>
@@ -297,59 +257,28 @@ export default function BentoGrid({ activeTab }) {
           </motion.div>
         </TooltipWrap>
 
-        {/* 5 · CONTACT — TooltipWrap + full rebuild of mouse tracking */}
-        <TooltipWrap show={activeTab === "CONTACT"} className="col-span-12 md:col-span-4">
-          <motion.div variants={tile}
-            ref={contactTileRef}
-            onMouseMove={(e) => {
-              if (!contactTileRef.current) return;
-              const r = contactTileRef.current.getBoundingClientRect();
-              setMousePos({ x: e.clientX - r.left, y: e.clientY - r.top });
-            }}
-            onMouseEnter={() => setHoverContact(true)}
-            onMouseLeave={() => setHoverContact(false)}
+        {/* contact tile */}
+        <TooltipWrap show={!isMobile && activeTab === "CONTACT"} className="col-span-12 md:col-span-4">
+          <motion.div id="contact" variants={tile}
             onClick={() => setIsContactOpen(true)}
-            className="relative rounded-[28px] overflow-hidden flex flex-col justify-between cursor-pointer min-h-[200px] group"
-            style={{ transformStyle: "preserve-3d" }}
+            className="relative rounded-[24px] md:rounded-[28px] overflow-hidden flex flex-col justify-between cursor-pointer min-h-[160px] md:min-h-[200px] group bg-emerald-600 hover:bg-emerald-700 transition-colors duration-300 p-5 md:p-6"
           >
-            {/* background */}
-            <div className="absolute inset-0 bg-emerald-600 group-hover:bg-emerald-700 transition-colors duration-300" />
-
-            {/* ── emerald cursor ball ── lives inside overflow-hidden so stays clipped to tile */}
-            <motion.div
-              className="absolute w-40 h-40 rounded-full pointer-events-none"
-              style={{
-                background: "radial-gradient(circle, #6ee7b7 0%, #34d399 40%, transparent 70%)",
-                filter: "blur(30px)",
-                top:  mousePos.y - 80,
-                left: mousePos.x - 80,
-              }}
-              animate={{ opacity: isHoveringContact ? 0.55 : 0, scale: isHoveringContact ? 1 : 0.3 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            />
-
-            {/* content */}
-            <div className="relative z-10 p-6 flex flex-col justify-between h-full min-h-[200px]">
-              <div className="flex justify-between items-start">
-                <span className="text-white/80 text-sm font-medium leading-snug">Have some<br />questions?</span>
-                <motion.div
-                  animate={{ x: isHoveringContact ? 3 : 0, y: isHoveringContact ? -3 : 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                >
-                  <ArrowUpRight
-                    size={22}
-                    style={{ color: isHoveringContact ? "#000" : "#fff", transition: "color 0.2s" }}
-                  />
-                </motion.div>
-              </div>
-              <h3 className="text-white text-[38px] font-semibold tracking-tight leading-none">Contact me</h3>
+            <div className="flex justify-between items-start">
+              <span className="text-white/80 text-sm font-medium leading-snug">Have some<br />questions?</span>
+              <motion.div
+                whileHover={{ x: 3, y: -3 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                <ArrowUpRight size={22} className="text-white group-hover:text-black transition-colors" />
+              </motion.div>
             </div>
+            <h3 className="text-white text-[32px] md:text-[38px] font-semibold tracking-tight leading-none mt-auto">Contact me</h3>
           </motion.div>
         </TooltipWrap>
 
-        {/* 6 · SOCIALS — TooltipWrap */}
-        <TooltipWrap show={activeTab === "SOCIALS"} className="col-span-12 md:col-span-3">
-          <motion.div variants={tile}
+        {/* socials tile */}
+        <TooltipWrap show={!isMobile && activeTab === "SOCIALS"} className="col-span-12 md:col-span-3">
+          <motion.div id="socials" variants={tile}
             className="bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-full"
           >
             <p className="text-gray-500 text-[10px] tracking-widest uppercase mb-3">Find me online</p>
@@ -378,9 +307,9 @@ export default function BentoGrid({ activeTab }) {
           </motion.div>
         </TooltipWrap>
 
-        {/* ══ ROW 3 ══════════════════════════════════════════════════════ */}
+        {/* row 3 */}
 
-        {/* 7 · EXPERIENCE — no tooltip needed per spec */}
+        {/* experience tile */}
         <motion.div variants={tile}
           className="col-span-12 md:col-span-5 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col gap-2.5 relative overflow-hidden"
         >
@@ -425,7 +354,7 @@ export default function BentoGrid({ activeTab }) {
           </div>
         </motion.div>
 
-        {/* 8 · CURRENTLY LEARNING */}
+        {/* learning tile */}
         <motion.div variants={tile}
           className="col-span-12 md:col-span-4 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col gap-3"
         >
@@ -461,7 +390,7 @@ export default function BentoGrid({ activeTab }) {
           </p>
         </motion.div>
 
-        {/* 9 · QUOTE */}
+        {/* quote tile */}
         <motion.div variants={tile}
           whileHover={{ borderColor: "rgba(52,211,153,0.25)" }}
           className="col-span-12 md:col-span-3 relative bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-6 flex flex-col justify-between overflow-hidden transition-colors"

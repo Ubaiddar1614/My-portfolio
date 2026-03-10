@@ -3,17 +3,17 @@ import connectMongoDB from "@/lib/mongodb";
 import Message from "@/models/Message";
 import { Resend } from 'resend';
 
-// Use the environment variable for security
+// TODO: change to ur real email when resend verified
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
   try {
     const { name, email, phone, message } = await request.json();
     
-    // 1. Send Email Notification first
+    // fire off the email first
     await resend.emails.send({
       from: 'Portfolio <onboarding@resend.dev>',
-      to: 'ubaiddar1614@gmail.com', // Your Gmail
+      to: 'ubaiddar1614@gmail.com', 
       subject: `🚀 New Message from ${name}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; color: #333;">
@@ -30,7 +30,7 @@ export async function POST(request) {
       `
     });
 
-    // 2. Save to MongoDB (only if email succeeded)
+    // then chuck it in the db (only if email worked)
     await connectMongoDB();
     await Message.create({ name, email, phone, message });
     
