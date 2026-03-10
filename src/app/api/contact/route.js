@@ -32,6 +32,7 @@ export async function POST(request) {
     // auto-reply to visitor
     await resend.emails.send({
       from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
+      reply_to: 'ubaiddar1614@gmail.com',
       to: email,
       subject: 'Thanks for reaching out!',
       html: `
