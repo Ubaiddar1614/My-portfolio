@@ -3,7 +3,6 @@ import connectMongoDB from "@/lib/mongodb";
 import Message from "@/models/Message";
 import { Resend } from 'resend';
 
-// TODO: change to ur real email when resend verified
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
@@ -12,7 +11,7 @@ export async function POST(request) {
     
     // fire off the email first
     await resend.emails.send({
-      from: 'Portfolio <onboarding@resend.dev>',
+      from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
       to: 'ubaiddar1614@gmail.com', 
       subject: `🚀 New Message from ${name}`,
       html: `
@@ -26,6 +25,22 @@ export async function POST(request) {
           <div style="background: #f4f4f4; padding: 15px; border-radius: 10px;">
             ${message}
           </div>
+        </div>
+      `
+    });
+
+    // auto-reply to visitor
+    await resend.emails.send({
+      from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
+      to: email,
+      subject: 'Thanks for reaching out!',
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #10b981;">Hi ${name},</h2>
+          <p>Thanks for your message! I've received it and will get back to you soon.</p>
+          <p>Best,<br/>Ubaid Raza Dar</p>
+          <hr style="margin-top: 20px; border: none; border-top: 1px solid #eee;" />
+          <p style="font-size: 12px; color: #888;">This is an automated confirmation.</p>
         </div>
       `
     });
