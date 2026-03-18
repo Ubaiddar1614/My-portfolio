@@ -4,9 +4,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
 
+// FIX: basic phone validation regex
+const isValidPhone = (phone) => /^[+]?[\d\s\-().]{7,20}$/.test(phone.trim());
+
 export default function ContactForm({ isOpen, onClose }) {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
   const [status, setStatus] = useState("idle");
+  const [phoneError, setPhoneError] = useState("");
 
   // close on ESC
   useEffect(() => {
@@ -15,12 +19,26 @@ export default function ContactForm({ isOpen, onClose }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, onClose]);
+
+  // FIX: helper to update a field and clear error state at the same time
+  const updateField = (field, value) => {
+    // FIX: reset error status when user starts correcting
+    if (status === "error") setStatus("idle");
+    if (field === "phone") setPhoneError("");
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.phone || !formData.message) return;
-    
+
+    // FIX: validate phone before submitting
+    if (!isValidPhone(formData.phone)) {
+      setPhoneError("Please enter a valid phone number.");
+      return;
+    }
+
     setStatus("loading");
 
     try {
@@ -35,6 +53,7 @@ export default function ContactForm({ isOpen, onClose }) {
         setTimeout(() => {
           setStatus("idle");
           setFormData({ name: "", email: "", phone: "", message: "" });
+          setPhoneError("");
           onClose();
         }, 2000);
       } else {
@@ -82,7 +101,7 @@ export default function ContactForm({ isOpen, onClose }) {
                 {/* Info Text - Hidden on mobile */}
                 <div className="hidden sm:flex sm:w-5/12 bg-[#1C1C1E] p-8 flex-col justify-center border-r border-white/5">
                   <p className="text-gray-400 text-[15px] leading-relaxed mb-6">
-                    I'd love to hear from you! Whether you have a project in mind, want to collaborate, or just want to say hello.
+                    I&apos;d love to hear from you! Whether you have a project in mind, want to collaborate, or just want to say hello.
                   </p>
                   <div className="flex flex-col gap-3 text-sm text-gray-500">
                     <p>• I typically respond within 24–48 hours</p>
@@ -93,14 +112,14 @@ export default function ContactForm({ isOpen, onClose }) {
                 {/* Form */}
                 <div className="w-full sm:w-7/12 p-4 sm:p-8 bg-[#111113]">
                   {status === "success" ? (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="flex flex-col items-center justify-center py-12 text-emerald-400"
                     >
                       <CheckCircle2 size={56} className="mb-4" />
                       <p className="text-xl font-medium text-white">Message sent!</p>
-                      <p className="text-sm text-gray-400 mt-2">I'll get back to you shortly.</p>
+                      <p className="text-sm text-gray-400 mt-2">I&apos;ll get back to you shortly.</p>
                     </motion.div>
                   ) : (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -111,7 +130,7 @@ export default function ContactForm({ isOpen, onClose }) {
                             required
                             type="text"
                             value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            onChange={(e) => updateField("name", e.target.value)}
                             className="w-full bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all"
                             placeholder="John"
                           />
@@ -122,7 +141,7 @@ export default function ContactForm({ isOpen, onClose }) {
                             required
                             type="email"
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            onChange={(e) => updateField("email", e.target.value)}
                             className="w-full bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all"
                             placeholder="john@email.com"
                           />
@@ -135,10 +154,16 @@ export default function ContactForm({ isOpen, onClose }) {
                           required
                           type="tel"
                           value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all"
+                          onChange={(e) => updateField("phone", e.target.value)}
+                          className={`w-full bg-[#1C1C1E] border rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none transition-all ${
+                            phoneError ? "border-red-500/50 focus:border-red-500/70" : "border-white/10 focus:border-emerald-500/50"
+                          }`}
                           placeholder="+92 300 1234567"
                         />
+                        {/* FIX: show phone validation error inline */}
+                        {phoneError && (
+                          <p className="text-red-400 text-[11px] mt-0.5">{phoneError}</p>
+                        )}
                       </div>
 
                       <div className="flex flex-col gap-1.5">
@@ -147,7 +172,7 @@ export default function ContactForm({ isOpen, onClose }) {
                           required
                           rows={3}
                           value={formData.message}
-                          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                          onChange={(e) => updateField("message", e.target.value)}
                           className="w-full bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all resize-none"
                           placeholder="Hi Ubaid, I found your portfolio..."
                         />
@@ -165,6 +190,7 @@ export default function ContactForm({ isOpen, onClose }) {
                         )}
                       </button>
 
+                      {/* FIX: error resets automatically when user edits any field */}
                       {status === "error" && (
                         <p className="text-red-400 text-sm text-center">Something went wrong. Try again.</p>
                       )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight, Github, Linkedin, Instagram,
@@ -18,7 +19,7 @@ const SassyTooltip = ({ show }) => (
         transition={{ type: "spring", stiffness: 340, damping: 24 }}
         className="absolute -top-11 left-1/2 -translate-x-1/2 bg-[#8B5CF6] text-white text-[11px] font-bold py-2 px-4 rounded-xl shadow-2xl whitespace-nowrap z-[999] pointer-events-none"
       >
-        👇 It's right here dumbass
+        👇 It&apos;s right here dumbass
         <span className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 block w-3 h-3 bg-[#8B5CF6] rotate-45 rounded-sm" />
       </motion.div>
     )}
@@ -40,7 +41,7 @@ const Marquee = ({ items }) => (
       className="inline-flex gap-6"
     >
       {[...items, ...items].map((t, i) => (
-        <span key={i} className="text-gray-600 text-[11px] font-semibold uppercase tracking-widest">
+        <span key={`marquee-${i}`} className="text-gray-600 text-[11px] font-semibold uppercase tracking-widest">
           {t} <span className="text-emerald-800 mx-1">✦</span>
         </span>
       ))}
@@ -75,12 +76,23 @@ export default function BentoGrid({ activeTab, isMobile }) {
   ];
 
   const workExp = [
-    { role: "Co-Founder & Backend Dev", company: "Stack Fuse", stack: ["Java","Spring Boot","MySQL"], current: true },
-    { role: "Full Stack Intern", company: "Division Public School", stack: ["ASP.NET","C#","HTML5"], current: false },
+    { role: "Co-Founder & Backend Dev", company: "Stack Fuse", stack: ["Java", "Spring Boot", "MySQL", "Docker"], current: true },
+    { role: "Full Stack Intern", company: "Division Public School", stack: ["ASP.NET", "C#", "HTML5"], current: false },
   ];
 
   const aboutWords = "Hi, I'm Ubaid a CS student, co-founder of Stack Fuse, and backend developer who builds real systems. I care about clean architecture, not just getting things to run.".split(" ");
-  const marqueeItems = ["Java","Spring Boot","MySQL","REST APIs","Docker","System Design","Backend Dev","Stack Fuse"];
+  const marqueeItems = ["Java", "Spring Boot", "MySQL", "REST APIs", "Docker", "System Design", "Backend Dev", "Stack Fuse"];
+
+  // FIX: pre-compute random positions so they're stable across renders
+  const wordPositions = useMemo(() =>
+    aboutWords.map(() => ({
+      x: Math.random() * 80 + 10,
+      y: Math.random() * 20 + 65,
+      r: (Math.random() - 0.5) * 120,
+    })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [] // compute once on mount
+  );
 
   return (
     <>
@@ -124,7 +136,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
                 className="relative w-11 h-11 rounded-full border border-white/10 overflow-hidden shadow-lg shrink-0"
               >
                 <div className="absolute inset-0 bg-[#0a0a0a]" />
-                <img src="/vinyl.jpg" alt="vinyl" className="absolute inset-0 w-full h-full object-cover opacity-70" />
+                <Image src="/vinyl.jpg" alt="vinyl" fill className="object-cover opacity-70" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-2.5 h-2.5 bg-[#1A1A1C] rounded-full border border-gray-700" />
                 </div>
@@ -157,12 +169,15 @@ export default function BentoGrid({ activeTab, isMobile }) {
         <motion.div variants={tile}
           className="col-span-12 md:col-span-4 rounded-[28px] overflow-hidden relative min-h-[260px] bg-[#1A1A1C] group"
         >
-          <motion.img
-            src="/profile.jpg" alt="Ubaid Raza Dar"
-            className="absolute inset-0 w-full h-full object-cover object-center z-0"
-            whileHover={{ scale: 1.07 }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          />
+          <div className="absolute inset-0 overflow-hidden">
+            <motion.div
+              className="absolute inset-0"
+              whileHover={{ scale: 1.07 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image src="/profile.jpg" alt="Ubaid Raza Dar" fill className="object-cover object-center" />
+            </motion.div>
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/20 to-transparent z-10 pointer-events-none" />
           <motion.div
             initial={{ y: 12, opacity: 0 }}
@@ -182,7 +197,6 @@ export default function BentoGrid({ activeTab, isMobile }) {
           >
             <p className="text-gray-500 text-[10px] tracking-widest uppercase mb-3">Projects</p>
 
-            {/* centered message */}
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-2">
               <motion.div
                 animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
@@ -212,22 +226,18 @@ export default function BentoGrid({ activeTab, isMobile }) {
             className="relative rounded-[28px] overflow-hidden flex flex-col justify-between min-h-[200px]"
           >
             <div className="absolute inset-0 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] overflow-hidden z-0">
-              {isDropped && aboutWords.map((word, i) => {
-                const rX = Math.random() * 80 + 10;
-                const rY = Math.random() * 20 + 65;
-                const rR = (Math.random() - 0.5) * 120;
-                return (
-                  <motion.span key={i}
-                    initial={{ opacity: 0, y: -40 }}
-                    animate={{ opacity: 1, left: `${rX}%`, top: `${rY}%`, rotate: rR }}
-                    transition={{ type: "spring", bounce: 0.55, duration: 1.4, delay: i * 0.02 }}
-                    className={`absolute text-[13px] pointer-events-none select-none ${
-                      word.includes("Ubaid") || word.includes("Stack") || word.includes("Fuse")
-                        ? "text-emerald-400 font-semibold" : "text-gray-600"
-                    }`}
-                  >{word}</motion.span>
-                );
-              })}
+              {/* FIX: use pre-computed stable positions from useMemo */}
+              {isDropped && aboutWords.map((word, i) => (
+                <motion.span key={`word-${i}`}
+                  initial={{ opacity: 0, y: -40 }}
+                  animate={{ opacity: 1, left: `${wordPositions[i].x}%`, top: `${wordPositions[i].y}%`, rotate: wordPositions[i].r }}
+                  transition={{ type: "spring", bounce: 0.55, duration: 1.4, delay: i * 0.02 }}
+                  className={`absolute text-[13px] pointer-events-none select-none ${
+                    word.includes("Ubaid") || word.includes("Stack") || word.includes("Fuse")
+                      ? "text-emerald-400 font-semibold" : "text-gray-600"
+                  }`}
+                >{word}</motion.span>
+              ))}
             </div>
 
             <div className="relative z-10 p-6 md:p-7 flex flex-col justify-between h-full gap-4">
@@ -236,14 +246,14 @@ export default function BentoGrid({ activeTab, isMobile }) {
                   <span
                     onClick={() => setIsDropped(true)}
                     className="cursor-pointer text-emerald-400 font-semibold hover:text-emerald-300 transition-colors"
-                  >Hey, I'm Ubaid.</span>{" "}
-                  Currently grinding through my CS degree while running Stack Fuse. I mostly work on the backend making sure APIs don't break and databases don't cry. I like clean code more than I like writing it, if that makes sense.
+                  >Hey, I&apos;m Ubaid.</span>{" "}
+                  Currently grinding through my CS degree while running Stack Fuse. I mostly work on the backend making sure APIs don&apos;t break and databases don&apos;t cry. I like clean code more than I like writing it, if that makes sense.
                 </p>
               )}
               <div className="flex flex-wrap gap-1.5 mt-auto">
                 {techStack.map((t, i) => (
                   <motion.span
-                    key={i}
+                    key={`tech-${i}`}
                     whileHover={{ scale: 1.08, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -285,11 +295,11 @@ export default function BentoGrid({ activeTab, isMobile }) {
 
             <div className="flex flex-col gap-2 flex-1 justify-center">
               {[
-                { icon: <Instagram size={17} />, label: "Instagram", handle: "@ubaid_dar10",     href: "https://instagram.com/ubaid_dar10",            accent: "hover:border-pink-500/30 hover:bg-pink-500/5",  ic: "group-hover/s:text-pink-400"  },
-                { icon: <Github    size={17} />, label: "GitHub",    handle: "ubaiddar1614",     href: "https://github.com/ubaiddar1614",               accent: "hover:border-white/20    hover:bg-white/5",     ic: "group-hover/s:text-white"     },
-                { icon: <Linkedin  size={17} />, label: "LinkedIn",  handle: "ubaid-raza-dar",   href: "https://linkedin.com/in/ubaid-raza-dar",        accent: "hover:border-blue-500/30 hover:bg-blue-500/5",  ic: "group-hover/s:text-blue-400"  },
+                { icon: <Instagram size={17} />, label: "Instagram", handle: "@ubaid_dar10",   href: "https://instagram.com/ubaid_dar10",         accent: "hover:border-pink-500/30 hover:bg-pink-500/5",  ic: "group-hover/s:text-pink-400"  },
+                { icon: <Github    size={17} />, label: "GitHub",    handle: "ubaiddar1614",   href: "https://github.com/ubaiddar1614",            accent: "hover:border-white/20    hover:bg-white/5",     ic: "group-hover/s:text-white"     },
+                { icon: <Linkedin  size={17} />, label: "LinkedIn",  handle: "ubaid-raza-dar", href: "https://linkedin.com/in/ubaid-raza-dar",     accent: "hover:border-blue-500/30 hover:bg-blue-500/5",  ic: "group-hover/s:text-blue-400"  },
               ].map((s, i) => (
-                <motion.a key={i}
+                <motion.a key={`social-${i}`}
                   href={s.href} target="_blank" rel="noopener noreferrer"
                   whileHover={{ x: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 22 }}
@@ -319,7 +329,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
           </div>
           <div className="flex flex-col gap-2 flex-1">
             {workExp.map((exp, i) => (
-              <motion.div key={i}
+              <motion.div key={`exp-${i}`}
                 whileHover={{ scale: 1.015, borderColor: exp.current ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)" }}
                 transition={{ type: "spring", stiffness: 360, damping: 24 }}
                 className={`rounded-2xl p-3.5 border flex flex-col gap-2 ${
@@ -346,7 +356,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {exp.stack.map((s, j) => (
-                    <span key={j} className="text-[9px] text-emerald-400/70 bg-emerald-500/10 rounded-md px-1.5 py-0.5 border border-emerald-500/15">{s}</span>
+                    <span key={`stack-${i}-${j}`} className="text-[9px] text-emerald-400/70 bg-emerald-500/10 rounded-md px-1.5 py-0.5 border border-emerald-500/15">{s}</span>
                   ))}
                 </div>
               </motion.div>
@@ -369,7 +379,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
               { label: "Docker & Deploy",    progress: 40 },
               { label: "System Design",      progress: 30 },
             ].map((p, i) => (
-              <div key={i} className="flex flex-col gap-1">
+              <div key={`progress-${i}`} className="flex flex-col gap-1">
                 <div className="flex justify-between">
                   <span className="text-gray-400 text-[11px]">{p.label}</span>
                   <span className="text-emerald-400/60 text-[10px]">{p.progress}%</span>
@@ -400,7 +410,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
             transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-0 right-0 w-40 h-40 bg-emerald-400 rounded-full blur-[70px] pointer-events-none"
           />
-          <p className="text-[54px] text-emerald-500/15 font-serif leading-none select-none relative z-10">"</p>
+          <p className="text-[54px] text-emerald-500/15 font-serif leading-none select-none relative z-10">&ldquo;</p>
           <div className="flex-1 flex flex-col justify-center relative z-10 -mt-6">
             <p className="text-gray-300 text-sm leading-relaxed italic">Build things that matter.</p>
             <motion.p
