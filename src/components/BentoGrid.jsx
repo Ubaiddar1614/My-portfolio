@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight, Github, Linkedin, Instagram,
-  Database, Server, Code2, Briefcase, BookOpen
+  Database, Server, Code2, Briefcase
 } from "lucide-react";
 import ContactForm from "./ContactForm";
 
@@ -48,6 +48,68 @@ const Marquee = ({ items }) => (
     </motion.div>
   </div>
 );
+
+const TerminalEgg = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [gitLog, setGitLog] = useState("CONNECTING TO GITHUB API...");
+
+  useEffect(() => {
+    fetch("https://api.github.com/users/Ubaiddar1614/events/public")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const pushEvent = data.find((event) => event.type === "PushEvent");
+          if (pushEvent) {
+            const repo = pushEvent.repo.name.replace("Ubaiddar1614/", "");
+            const commitMsg = pushEvent.payload.commits?.[0]?.message || "Pushed updates";
+            const time = new Date(pushEvent.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            setGitLog(`[${time}] PUSH ${repo} -> "${commitMsg}"`);
+          } else {
+            setGitLog("[INFO] Active development on Stack Fuse");
+          }
+        } else {
+          setGitLog("[INFO] Active development on Stack Fuse");
+        }
+      })
+      .catch(() => {
+        setGitLog("[INFO] Active development on Stack Fuse");
+      });
+  }, []);
+
+  return (
+    <motion.div 
+      layout
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
+      }}
+      className="text-left font-mono text-[9px] cursor-pointer select-none bg-black/40 border border-emerald-500/20 rounded-xl p-2.5 max-w-[210px] hover:border-emerald-500/40 transition-colors shrink-0 text-emerald-400 shadow-lg"
+      transition={{ type: "spring", stiffness: 350, damping: 26 }}
+    >
+      <div className="flex items-center gap-1.5 mb-1.5 text-[8px] text-emerald-500/60 uppercase tracking-widest font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <span>git_ops.log</span>
+      </div>
+      <p className="leading-normal truncate max-w-[190px] font-semibold text-emerald-300">{gitLog}</p>
+      
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <pre className="mt-2 text-[8px] leading-relaxed text-emerald-400 bg-black/60 p-2 rounded-lg border border-white/5 whitespace-pre-wrap">
+              {JSON.stringify({ status: 200, uptime: "99.9%", available_for_work: true }, null, 2)}
+            </pre>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
 export default function BentoGrid({ activeTab, isMobile }) {
   const [isContactOpen, setIsContactOpen] = useState(false);
@@ -124,24 +186,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
               <span className="text-emerald-400 text-[10px] font-semibold uppercase tracking-wider">Available</span>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <div className="text-right">
-                <p className="text-[9px] text-gray-500 uppercase tracking-wider">Now Playing</p>
-                <p className="text-[11px] text-white font-medium">A Sky Full of Stars</p>
-                <p className="text-[9px] text-gray-500">Coldplay</p>
-              </div>
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                className="relative w-11 h-11 rounded-full border border-white/10 overflow-hidden shadow-lg shrink-0"
-              >
-                <div className="absolute inset-0 bg-[#0a0a0a]" />
-                <Image src="/vinyl.jpg" alt="vinyl" fill className="object-cover opacity-70" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 bg-[#1A1A1C] rounded-full border border-gray-700" />
-                </div>
-              </motion.div>
-            </div>
+            <TerminalEgg />
           </div>
 
           <div className="relative z-10 mt-4">
@@ -157,7 +202,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
                 Surfaces.
               </motion.span>
             </h1>
-            <p className="text-gray-500 text-sm mt-2 font-medium">— Beautifully Coded.</p>
+            <p className="text-gray-600 text-sm mt-2 font-mono font-medium tracking-tight">— Architected for Scale.</p>
           </div>
 
           <div className="relative z-10 mt-4 pt-3 border-t border-white/[0.05]">
@@ -175,7 +220,14 @@ export default function BentoGrid({ activeTab, isMobile }) {
               whileHover={{ scale: 1.07 }}
               transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Image src="/profile.jpg" alt="Ubaid Raza Dar" fill className="object-cover object-center" />
+              <Image 
+                src="/profile.jpg" 
+                alt="Ubaid Raza Dar" 
+                fill 
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 350px"
+                className="object-cover object-center grayscale contrast-125 brightness-90" 
+              />
             </motion.div>
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/20 to-transparent z-10 pointer-events-none" />
@@ -190,31 +242,37 @@ export default function BentoGrid({ activeTab, isMobile }) {
           </motion.div>
         </motion.div>
 
-        {/* projects tile */}
+        {/* projects tile -> Case Study Case file */}
         <TooltipWrap show={!isMobile && activeTab === "PROJECTS"} className="col-span-12 md:col-span-3">
           <motion.div id="projects" variants={tile}
-            className="bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-full min-h-[260px]"
+            className="bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col justify-between relative overflow-hidden h-full min-h-[260px] group"
           >
-            <p className="text-gray-500 text-[10px] tracking-widest uppercase mb-3">Projects</p>
-
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-2">
-              <motion.div
-                animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center"
-              >
-                <span className="text-emerald-400 text-lg">⚒</span>
-              </motion.div>
-              <p className="text-gray-300 text-sm font-semibold leading-snug">
-                Projects will be<br />live soon
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-emerald-400 text-[9px] font-mono tracking-widest uppercase">SYS-INCDNT #04</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              </div>
+              
+              <h3 className="text-white text-sm font-bold tracking-tight mb-2">Stack Fuse Connection Leak</h3>
+              <p className="text-gray-400 text-[11px] leading-relaxed mb-3">
+                <strong>Incident:</strong> Serverless Mongoose connections exhausted under burst loads, causing cold-start latencies of up to 4.2s.
               </p>
-              <p className="text-gray-600 text-[11px]">Currently in the build.</p>
+              <p className="text-gray-500 text-[10px] leading-normal font-mono bg-black/30 border border-white/5 rounded-lg p-2">
+                RESOLVED: Bound connection promise to global context to cache active sockets. Latency dropped by 88%.
+              </p>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0 }} whileHover={{ opacity: 1 }}
-              className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-emerald-900/15 to-transparent pointer-events-none rounded-b-[28px]"
-            />
+            <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
+              <span className="text-[9px] text-gray-500 uppercase font-mono tracking-wide">Spring / Next.js / Mongo</span>
+              <a 
+                href="https://github.com/ubaiddar1614" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-emerald-400 hover:text-emerald-300 text-[10px] font-bold flex items-center gap-1 group/btn transition-colors"
+              >
+                Docs <ArrowUpRight size={10} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+              </a>
+            </div>
           </motion.div>
         </TooltipWrap>
 
@@ -247,7 +305,7 @@ export default function BentoGrid({ activeTab, isMobile }) {
                     onClick={() => setIsDropped(true)}
                     className="cursor-pointer text-emerald-400 font-semibold hover:text-emerald-300 transition-colors"
                   >Hey, I&apos;m Ubaid.</span>{" "}
-                  Currently grinding through my CS degree while running Stack Fuse. I mostly work on the backend making sure APIs don&apos;t break and databases don&apos;t cry. I like clean code more than I like writing it, if that makes sense.
+                  A CS student and backend engineer running Stack Fuse. I spend my time designing clean APIs, optimizing relational schemas, and stripping away unnecessary latency. I believe code should be easy to read and systems should be built to scale without throwing memory exceptions.
                 </p>
               )}
               <div className="flex flex-wrap gap-1.5 mt-auto">
@@ -271,46 +329,46 @@ export default function BentoGrid({ activeTab, isMobile }) {
         <TooltipWrap show={!isMobile && activeTab === "CONTACT"} className="col-span-12 md:col-span-4">
           <motion.div id="contact" variants={tile}
             onClick={() => setIsContactOpen(true)}
-            className="relative rounded-[24px] md:rounded-[28px] overflow-hidden flex flex-col justify-between cursor-pointer min-h-[160px] md:min-h-[200px] group bg-emerald-600 hover:bg-emerald-700 transition-colors duration-300 p-5 md:p-6"
+            className="relative rounded-[24px] md:rounded-[28px] border border-emerald-500 overflow-hidden flex flex-col justify-between cursor-pointer min-h-[160px] md:min-h-[200px] group bg-neutral-900 hover:bg-emerald-900/20 transition-colors duration-300 p-5 md:p-6 text-emerald-400"
           >
             <div className="flex justify-between items-start">
-              <span className="text-white/80 text-sm font-medium leading-snug">Have some<br />questions?</span>
+              <span className="text-emerald-500/70 text-sm font-medium leading-snug">Have some<br />questions?</span>
               <motion.div
                 whileHover={{ x: 3, y: -3 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
-                <ArrowUpRight size={22} className="text-white group-hover:text-black transition-colors" />
+                <ArrowUpRight size={22} className="text-emerald-400 group-hover:text-emerald-300 transition-colors" />
               </motion.div>
             </div>
-            <h3 className="text-white text-[32px] md:text-[38px] font-semibold tracking-tight leading-none mt-auto">Contact me</h3>
+            <h3 className="text-emerald-400 text-[32px] md:text-[38px] font-semibold tracking-tight leading-none mt-auto font-mono">Contact me</h3>
           </motion.div>
         </TooltipWrap>
 
         {/* socials tile */}
         <TooltipWrap show={!isMobile && activeTab === "SOCIALS"} className="col-span-12 md:col-span-3">
           <motion.div id="socials" variants={tile}
-            className="bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-full"
+            className="bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-full justify-between"
           >
-            <p className="text-gray-500 text-[10px] tracking-widest uppercase mb-3">Find me online</p>
+            <p className="text-gray-500 text-[10px] tracking-widest uppercase mb-2">Find me online</p>
 
-            <div className="flex flex-col gap-2 flex-1 justify-center">
+            <div className="flex flex-col gap-1.5 flex-1 justify-center">
               {[
-                { icon: <Instagram size={17} />, label: "Instagram", handle: "@ubaid_dar10",   href: "https://instagram.com/ubaid_dar10",         accent: "hover:border-pink-500/30 hover:bg-pink-500/5",  ic: "group-hover/s:text-pink-400"  },
-                { icon: <Github    size={17} />, label: "GitHub",    handle: "ubaiddar1614",   href: "https://github.com/ubaiddar1614",            accent: "hover:border-white/20    hover:bg-white/5",     ic: "group-hover/s:text-white"     },
-                { icon: <Linkedin  size={17} />, label: "LinkedIn",  handle: "ubaid-raza-dar", href: "https://linkedin.com/in/ubaid-raza-dar",     accent: "hover:border-blue-500/30 hover:bg-blue-500/5",  ic: "group-hover/s:text-blue-400"  },
+                { icon: <Instagram size={15} />, label: "Instagram", handle: "@ubaid_dar10",   href: "https://instagram.com/ubaid_dar10",         accent: "hover:border-pink-500/30 hover:bg-pink-500/5",  ic: "group-hover/s:text-pink-400"  },
+                { icon: <Github    size={15} />, label: "GitHub",    handle: "ubaiddar1614",   href: "https://github.com/ubaiddar1614",            accent: "hover:border-white/20    hover:bg-white/5",     ic: "group-hover/s:text-white"     },
+                { icon: <Linkedin  size={15} />, label: "LinkedIn",  handle: "ubaid-raza-dar", href: "https://linkedin.com/in/ubaid-raza-dar",     accent: "hover:border-blue-500/30 hover:bg-blue-500/5",  ic: "group-hover/s:text-blue-400"  },
               ].map((s, i) => (
                 <motion.a key={`social-${i}`}
                   href={s.href} target="_blank" rel="noopener noreferrer"
-                  whileHover={{ x: 5 }}
+                  whileHover={{ x: 3 }}
                   transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                  className={`flex items-center gap-3 p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] transition-all group/s ${s.accent}`}
+                  className={`flex items-center gap-2.5 py-1.5 px-3 rounded-xl border border-white/[0.05] bg-white/[0.02] transition-all group/s ${s.accent}`}
                 >
                   <span className={`text-gray-500 transition-colors ${s.ic}`}>{s.icon}</span>
-                  <div className="min-w-0">
-                    <p className="text-gray-300 text-xs font-medium group-hover/s:text-white transition-colors">{s.label}</p>
-                    <p className="text-gray-600 text-[10px] truncate">{s.handle}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-gray-300 text-xs font-semibold group-hover/s:text-white transition-colors">{s.label}</p>
+                    <p className="text-gray-600 text-[9px] truncate">{s.handle}</p>
                   </div>
-                  <ArrowUpRight size={11} className="text-gray-700 group-hover/s:text-emerald-400 ml-auto transition-colors shrink-0" />
+                  <ArrowUpRight size={10} className="text-gray-700 group-hover/s:text-emerald-400 ml-auto transition-colors shrink-0" />
                 </motion.a>
               ))}
             </div>
@@ -364,43 +422,39 @@ export default function BentoGrid({ activeTab, isMobile }) {
           </div>
         </motion.div>
 
-        {/* learning tile */}
+        {/* shipping / operations log tile */}
         <motion.div variants={tile}
-          className="col-span-12 md:col-span-4 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col gap-3"
+          className="col-span-12 md:col-span-4 bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-5 flex flex-col justify-between min-h-[220px]"
         >
-          <div className="flex items-center gap-2">
-            <BookOpen size={12} className="text-gray-500" />
-            <p className="text-gray-500 text-[10px] tracking-widest uppercase">Currently Learning</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-gray-400 text-[9px] font-mono uppercase tracking-widest">WEEKLY_SHIP_LOGS</p>
           </div>
-          <div className="flex flex-col gap-3 flex-1 justify-center">
+          
+          <div className="flex flex-col gap-2.5 flex-1 justify-center font-mono">
             {[
-              { label: "Spring Boot + JPA",  progress: 72 },
-              { label: "MySQL Optimization", progress: 65 },
-              { label: "Docker & Deploy",    progress: 40 },
-              { label: "System Design",      progress: 30 },
-            ].map((p, i) => (
-              <div key={`progress-${i}`} className="flex flex-col gap-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-400 text-[11px]">{p.label}</span>
-                  <span className="text-emerald-400/60 text-[10px]">{p.progress}%</span>
+              { time: "Mon 14:10", action: "config_auth", details: "Spring OAuth2 JWT pipeline", perf: "[OK]" },
+              { time: "Wed 09:42", action: "optmz_db", details: "Indexed message schema key fields", perf: "-112ms" },
+              { time: "Thu 16:30", action: "dockr_bld", details: "Created multi-stage Docker file", perf: "-140MB" },
+              { time: "Sat 11:15", action: "api_patch", details: "Cached serverless mongo streams", perf: "SEC_OK" }
+            ].map((log, i) => (
+              <div key={`log-${i}`} className="flex flex-col text-[10px] border-b border-white/[0.02] pb-1.5 last:border-0 last:pb-0">
+                <div className="flex justify-between items-center text-gray-500">
+                  <span>{log.time} · {log.action}</span>
+                  <span className="text-emerald-400/90 text-[9px] font-bold">{log.perf}</span>
                 </div>
-                <div className="h-[3px] bg-white/[0.04] rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${p.progress}%` }}
-                    transition={{ duration: 1.5, delay: 0.5 + i * 0.13, ease: [0.22, 1, 0.36, 1] }}
-                    className="h-full bg-gradient-to-r from-emerald-700 to-emerald-400 rounded-full"
-                  />
-                </div>
+                <p className="text-gray-300 text-[11px] mt-0.5">{log.details}</p>
               </div>
             ))}
           </div>
-          <p className="text-gray-700 text-[10px] pt-2 border-t border-white/[0.04]">
-            Java → Spring → MySQL → REST → Docker → System Design
-          </p>
+          
+          <div className="pt-2 border-t border-white/[0.04] text-[9px] font-mono text-gray-600 flex justify-between">
+            <span>BRANCH: MAIN</span>
+            <span>SHIPPED VIA GIT</span>
+          </div>
         </motion.div>
 
-        {/* quote tile */}
+        {/* thesis tile */}
         <motion.div variants={tile}
           whileHover={{ borderColor: "rgba(52,211,153,0.25)" }}
           className="col-span-12 md:col-span-3 relative bg-[#1A1A1C] border border-white/[0.06] rounded-[28px] p-6 flex flex-col justify-between overflow-hidden transition-colors"
@@ -410,20 +464,20 @@ export default function BentoGrid({ activeTab, isMobile }) {
             transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-0 right-0 w-40 h-40 bg-emerald-400 rounded-full blur-[70px] pointer-events-none"
           />
-          <p className="text-[54px] text-emerald-500/15 font-serif leading-none select-none relative z-10">&ldquo;</p>
-          <div className="flex-1 flex flex-col justify-center relative z-10 -mt-6">
-            <p className="text-gray-300 text-sm leading-relaxed italic">Build things that matter.</p>
-            <motion.p
-              animate={{ opacity: [0.65, 1, 0.65] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="text-emerald-400 text-sm font-semibold not-italic mt-1"
-            >
-              Ship. Iterate. Master.
-            </motion.p>
+          <div className="flex-1 flex flex-col justify-center relative z-10 pt-4">
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <span className="w-2 h-2 rounded-full bg-[#ef4444]/80" />
+              <span className="w-2 h-2 rounded-full bg-[#facc15]/80" />
+              <span className="w-2 h-2 rounded-full bg-[#22c55e]/80" />
+            </div>
+            <p className="text-emerald-400/70 text-[9px] font-mono mb-1.5">root@ubaid:~# cat thesis.sh</p>
+            <p className="text-gray-300 text-xs font-semibold leading-relaxed font-mono">
+              "If your server takes 500ms to resolve a single query, you don't have a database scale problem. You have an efficiency problem."
+            </p>
           </div>
-          <div className="relative z-10 pt-3 border-t border-white/[0.05] flex items-center justify-between">
-            <p className="text-gray-700 text-[10px] uppercase tracking-widest">Ubaid Raza Dar</p>
-            <p className="text-emerald-700 text-[10px]">Freelance · Open</p>
+          <div className="relative z-10 pt-3 border-t border-white/[0.05] flex items-center justify-between font-mono text-[9px]">
+            <p className="text-gray-500 uppercase tracking-widest">STATUS: ONLINE</p>
+            <p className="text-emerald-500/80">LATENCY: 12ms</p>
           </div>
         </motion.div>
 

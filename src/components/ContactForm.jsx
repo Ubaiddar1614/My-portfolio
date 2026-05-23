@@ -11,6 +11,7 @@ export default function ContactForm({ isOpen, onClose }) {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
   const [status, setStatus] = useState("idle");
   const [phoneError, setPhoneError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   // close on ESC
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function ContactForm({ isOpen, onClose }) {
     // FIX: reset error status when user starts correcting
     if (status === "error") setStatus("idle");
     if (field === "phone") setPhoneError("");
+    setErrorMessage(""); // clear custom error messages
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -40,6 +42,7 @@ export default function ContactForm({ isOpen, onClose }) {
     }
 
     setStatus("loading");
+    setErrorMessage("");
 
     try {
       const res = await fetch("/api/contact", {
@@ -48,19 +51,24 @@ export default function ContactForm({ isOpen, onClose }) {
         body: JSON.stringify(formData),
       });
 
+      const resData = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setStatus("success");
         setTimeout(() => {
           setStatus("idle");
           setFormData({ name: "", email: "", phone: "", message: "" });
           setPhoneError("");
+          setErrorMessage("");
           onClose();
         }, 2000);
       } else {
         setStatus("error");
+        setErrorMessage(resData.message || "Something went wrong. Please try again.");
       }
     } catch (error) {
       setStatus("error");
+      setErrorMessage("Network error. Please check your connection and try again.");
     }
   };
 
@@ -191,8 +199,8 @@ export default function ContactForm({ isOpen, onClose }) {
                       </button>
 
                       {/* FIX: error resets automatically when user edits any field */}
-                      {status === "error" && (
-                        <p className="text-red-400 text-sm text-center">Something went wrong. Try again.</p>
+                      {status === "error" && errorMessage && (
+                        <p className="text-red-400 text-sm text-center font-medium">{errorMessage}</p>
                       )}
                     </form>
                   )}

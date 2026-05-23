@@ -59,70 +59,91 @@ const validateInput = (data) => {
 
 export async function POST(request) {
   try {
-    // Rate limiting
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    // 1. IP extraction and Rate Limiting
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown');
+    
     const rateLimitCheck = rateLimit(ip);
     if (!rateLimitCheck.allowed) {
-      return NextResponse.json({ message: `Too many requests. Try again in ${rateLimitCheck.retryAfter} minutes.` }, { status: 429 });
+      return NextResponse.json(
+        { message: `Too many requests. Please try again in ${rateLimitCheck.retryAfter} minutes.` },
+        { status: 429 }
+      );
     }
 
+    // 2. Parse and Validate Request Body
     const body = await request.json();
     const { name, email, phone, message } = body;
     
-    // Input validation
     const validationErrors = validateInput({ name, email, phone, message });
     if (validationErrors.length > 0) {
       return NextResponse.json({ message: "Validation failed", errors: validationErrors }, { status: 400 });
     }
     
-    // XSS sanitization
+    // 3. Connect to Database & Save (Primary Source of Truth)
+    await connectMongoDB();
+    await Message.create({
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      message: message.trim()
+    });
+
+    // 4. Send Emails in Background with independent try-catches
+    // Preparing escaped strings for safe HTML rendering in email templates
     const safeName = escapeHtml(name.trim());
     const safeEmail = escapeHtml(email.trim());
     const safePhone = escapeHtml(phone.trim());
     const safeMessage = escapeHtml(message.trim());
-    
-    // fire off the email first
-    await resend.emails.send({
-      from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
-      to: 'ubaiddar1614@gmail.com', 
-      subject: `🚀 New Message from ${safeName}`,
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #10b981;">New Inquiry Received</h2>
-          <hr />
-          <p><strong>Name:</strong> ${safeName}</p>
-          <p><strong>Email:</strong> ${safeEmail}</p>
-          <p><strong>Phone:</strong> ${safePhone}</p>
-          <p><strong>Message:</strong></p>
-          <div style="background: #f4f4f4; padding: 15px; border-radius: 10px;">${safeMessage}</div>
-        </div>
-      `
-    });
 
-    // auto-reply to visitor
-    await resend.emails.send({
-      from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
-      reply_to: 'ubaiddar1614@gmail.com',
-      to: email,
-      subject: 'Thanks for reaching out!',
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #10b981;">Hi ${safeName},</h2>
-          <p>Thanks for your message! I'll get back to you soon.</p>
-          <p>Best,<br/>Ubaid Raza Dar</p>
-          <hr style="margin-top: 20px; border: none; border-top: 1px solid #eee;" />
-          <p style="font-size: 12px; color: #888;">This is an automated confirmation.</p>
-        </div>
-      `
-    });
+    // Admin Inquiry Notification
+    try {
+      await resend.emails.send({
+        from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
+        to: 'ubaiddar1614@gmail.com', 
+        subject: `🚀 New Message from ${safeName}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #10b981;">New Inquiry Received</h2>
+            <hr />
+            <p><strong>Name:</strong> ${safeName}</p>
+            <p><strong>Email:</strong> ${safeEmail}</p>
+            <p><strong>Phone:</strong> ${safePhone}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background: #f4f4f4; padding: 15px; border-radius: 10px; white-space: pre-wrap;">${safeMessage}</div>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      console.error("Failed to send admin notification email:", emailError);
+      // We do not fail the request; the message is already saved in the database
+    }
 
-    // then chuck it in the db (only if email worked)
-    await connectMongoDB();
-    await Message.create({ name: safeName, email: safeEmail, phone: safePhone, message: safeMessage });
+    // Auto-Reply Confirmation to Visitor
+    try {
+      await resend.emails.send({
+        from: 'Ubaid Raza Dar <contact@ubaiddar.dev>',
+        reply_to: 'ubaiddar1614@gmail.com',
+        to: email.trim(),
+        subject: 'Thanks for reaching out!',
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #10b981;">Hi ${safeName},</h2>
+            <p>Thanks for your message! I'll get back to you as soon as possible.</p>
+            <p>Best regards,<br/>Ubaid Raza Dar</p>
+            <hr style="margin-top: 20px; border: none; border-top: 1px solid #eee;" />
+            <p style="font-size: 12px; color: #888;">This is an automated confirmation.</p>
+          </div>
+        `
+      });
+    } catch (replyError) {
+      console.error("Failed to send auto-reply email to visitor:", replyError);
+      // We do not fail the request
+    }
     
-    return NextResponse.json({ message: "Success!" }, { status: 201 });
+    return NextResponse.json({ message: "Message sent and stored successfully!" }, { status: 201 });
   } catch (error) {
-    console.error("Contact form error:", error);
-    return NextResponse.json({ message: "An error occurred while processing your request" }, { status: 500 });
+    console.error("Contact form route error:", error);
+    return NextResponse.json({ message: "An unexpected error occurred while processing your request." }, { status: 500 });
   }
 }
